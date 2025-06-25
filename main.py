@@ -393,7 +393,7 @@ def main():
                         lcd.putstr("Enter Type:")
                         lcd.move_to(1, 0)
                         lcd.putstr("Press # to confirm")
-                elif key == '*':  # Backspace
+                elif key == 'D':  # Backspace
                     number_buffer = number_buffer[:-1]
                     lcd.move_to(0, 0)
                     lcd.putstr("                ")
@@ -403,6 +403,8 @@ def main():
                     lcd.putstr(number_buffer)
                     lcd.move_to(1, 0)
                     lcd.putstr("Press # to confirm")
+                elif key == '*':
+                    trigger_ota_update()  # 🚀 Trigger OTA when * is pressed
                 elif key in '0123456789':  # Number input
                     number_buffer += key
                     lcd.move_to(0, 0)
