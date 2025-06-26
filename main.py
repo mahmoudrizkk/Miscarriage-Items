@@ -476,9 +476,9 @@ def main():
                 lcd.move_to(0, 7)
                 lcd.putstr(str(status_code))
                 
-                lcd.move_to(0, 1)
+                lcd.move_to(1, 0)
                 lcd.putstr("                ")
-                lcd.move_to(0, 1)
+                lcd.move_to(1, 0)
                 lcd.putstr(message[:16])
                 
             except json.JSONDecodeError:
