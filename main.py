@@ -160,7 +160,9 @@ def trigger_ota_update():
     lcd.putstr("                ")
     lcd.move_to(0, 0)
     lcd.putstr("Enter Password:")
-    lcd.move_to(0, 15)
+    lcd.move_to(1, 0)
+    lcd.putstr("                ")  # Clear the second line
+    lcd.move_to(1, 0)
     lcd.putstr("*")
     
     password_buffer = ""
@@ -206,7 +208,9 @@ def trigger_ota_update():
                     lcd.putstr("                ")
                     lcd.move_to(0, 0)
                     lcd.putstr("Enter Password:")
-                    lcd.move_to(0, 15)
+                    lcd.move_to(1, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(1, 0)
                     lcd.putstr("*")
             elif key == '*':  # Cancel key
                 lcd.move_to(0, 0)
@@ -227,7 +231,9 @@ def trigger_ota_update():
                 lcd.putstr("                ")
                 lcd.move_to(0, 0)
                 lcd.putstr("Enter Password:")
-                lcd.move_to(0, 15)
+                lcd.move_to(1, 0)
+                lcd.putstr("                ")
+                lcd.move_to(1, 0)
                 lcd.putstr("*" * min(len(password_buffer), 1))
             last_key = key
         elif not key:
@@ -352,6 +358,71 @@ def main():
     connect_wifi()
 
     while True:
+        # Step 0: Order Number Selection
+        order_buffer = ""
+        order_no = None
+        last_key = None
+
+        update_wifi_status(force=True)
+        lcd.move_to(0, 0)
+        lcd.putstr("                ")
+        lcd.move_to(0, 0)
+        lcd.putstr("Enter Order No:")
+        lcd.move_to(1, 0)
+        lcd.putstr("Press # to confirm")
+
+        while order_no is None:
+            update_wifi_status()
+            key = scan_keypad()
+            if key and key != last_key:
+                if key == '#':  # Confirm order number
+                    if order_buffer:
+                        order_no = order_buffer
+                        lcd.move_to(0, 0)
+                        lcd.putstr("                ")
+                        lcd.move_to(0, 0)
+                        lcd.putstr("Order Confirmed:")
+                        lcd.move_to(1, 0)
+                        lcd.putstr("No: " + order_no[:12])
+                        time.sleep(1)
+                    else:
+                        lcd.move_to(0, 0)
+                        lcd.putstr("                ")
+                        lcd.move_to(0, 0)
+                        lcd.putstr("Enter a number!")
+                        time.sleep(1)
+                        lcd.move_to(0, 0)
+                        lcd.putstr("                ")
+                        lcd.move_to(0, 0)
+                        lcd.putstr("Enter Order No:")
+                        lcd.move_to(1, 0)
+                        lcd.putstr("Press # to confirm")
+                elif key == '*':  # Backspace
+                    order_buffer = order_buffer[:-1]
+                    lcd.move_to(0, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Order No:")
+                    lcd.move_to(0, 9)
+                    lcd.putstr(order_buffer)
+                    lcd.move_to(1, 0)
+                    lcd.putstr("Press # to confirm")
+                elif key in '0123456789':  # Number input
+                    order_buffer += key
+                    lcd.move_to(0, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Order No:")
+                    lcd.move_to(0, 9)
+                    lcd.putstr(order_buffer)
+                    lcd.move_to(1, 0)
+                    lcd.putstr("Press # to confirm")
+                last_key = key
+            elif not key:
+                last_key = None
+            time.sleep_ms(100)
+
+        # Step 1: Type Selection
         number_buffer = ""
         selected_type = None
         last_key = None
