@@ -559,8 +559,9 @@ def main():
                         lcd.putstr("Enter Deduct:")
                         lcd.move_to(1, 0)
                         lcd.putstr("Press # to conf")
-                elif key == '*':  # Backspace
-                    deduction_buffer = deduction_buffer[:-1]
+                elif key == '*':  # Decimal point
+                    if '.' not in deduction_buffer:
+                        deduction_buffer += '.'
                     lcd.move_to(0, 0)
                     lcd.putstr("                ")
                     lcd.move_to(0, 0)
