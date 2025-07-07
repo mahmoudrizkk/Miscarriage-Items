@@ -509,7 +509,8 @@ def main():
         update_wifi_status()
 
         # Step 4: Receive Weight from Sensor
-        received_weight = receive_number()
+        # received_weight = receive_number()
+        received_weight = "1000"
 
         # Step 5: Display Weight
         lcd.move_to(0, 0)
@@ -530,7 +531,8 @@ def main():
             lcd.move_to(0, 0)
             lcd.putstr("Sending...")
             
-            response = requests.get(url, timeout=10)
+            # response = requests.get(url, timeout=10)
+            response = requests.post(url, json={})
             response_text = response.text
             response.close()
 
