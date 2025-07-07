@@ -522,9 +522,73 @@ def main():
         update_wifi_status()
         time.sleep(1)
 
+        # Step 5.5: Input Deduction Weight
+        lcd.move_to(0, 0)
+        lcd.putstr("                ")
+        lcd.move_to(0, 0)
+        lcd.putstr("Enter Deduct:")
+        lcd.move_to(1, 0)
+        lcd.putstr("Press # to conf")
+
+        deduction_buffer = ""
+        deduction_weight = None
+        last_key = None
+        while deduction_weight is None:
+            update_wifi_status()
+            key = scan_keypad()
+            if key and key != last_key:
+                if key == '#':  # Confirm deduction weight
+                    if deduction_buffer:
+                        deduction_weight = deduction_buffer
+                        lcd.move_to(0, 0)
+                        lcd.putstr("                ")
+                        lcd.move_to(0, 0)
+                        lcd.putstr("Deduct Saved:")
+                        lcd.move_to(1, 0)
+                        lcd.putstr(deduction_weight[:16])
+                        time.sleep(1)
+                    else:
+                        lcd.move_to(0, 0)
+                        lcd.putstr("                ")
+                        lcd.move_to(0, 0)
+                        lcd.putstr("Enter a number!")
+                        time.sleep(1)
+                        lcd.move_to(0, 0)
+                        lcd.putstr("                ")
+                        lcd.move_to(0, 0)
+                        lcd.putstr("Enter Deduct:")
+                        lcd.move_to(1, 0)
+                        lcd.putstr("Press # to conf")
+                elif key == '*':  # Backspace
+                    deduction_buffer = deduction_buffer[:-1]
+                    lcd.move_to(0, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Deduct:")
+                    lcd.move_to(0, 8)
+                    lcd.putstr(deduction_buffer)
+                    lcd.move_to(1, 0)
+                    lcd.putstr("Press # to conf")
+                elif key in '0123456789':  # Number input
+                    deduction_buffer += key
+                    lcd.move_to(0, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Deduct:")
+                    lcd.move_to(0, 8)
+                    lcd.putstr(deduction_buffer)
+                    lcd.move_to(1, 0)
+                    lcd.putstr("Press # to conf")
+                last_key = key
+            elif not key:
+                last_key = None
+            time.sleep_ms(100)
+        # Now deduction_weight contains the value entered by the user
+
         # Step 6: Send to API
+        # http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight=15&TypeId=1&OrderIndex=1&MachineId=1&WeightOfParneka=6
         try:
-            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?weight={received_weight}&type={selected_type}&machineid=1"
+            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight={received_weight}&TypeId={selected_type}&OrderIndex={order_buffer}&machineid=1&WeightOfParneka={deduction_weight}"
             
             lcd.move_to(0, 0)
             lcd.putstr("                ")
@@ -545,20 +609,38 @@ def main():
                 lcd.move_to(0, 0)
                 lcd.putstr("                ")
                 lcd.move_to(0, 0)
-                lcd.putstr("Status:")
-                lcd.move_to(0, 7)
-                lcd.putstr(str(status_code))
-                
+                if status_code == 200:
+                    lcd.putstr("Success!")
+                elif status_code == 400:
+                    lcd.putstr("Bad Request")
+                elif status_code == 404:
+                    lcd.putstr("Not Found")
+                else:
+                    lcd.putstr("Unknown Resp")
+
                 lcd.move_to(1, 0)
                 lcd.putstr("                ")
                 lcd.move_to(1, 0)
-                lcd.putstr(message[:16])
-                
+                lcd.putstr(message[:16])  # Show first 16 chars of message
+
             except json.JSONDecodeError:
                 lcd.move_to(0, 0)
                 lcd.putstr("                ")
                 lcd.move_to(0, 0)
-                lcd.putstr(response_text[:7])
+                lcd.putstr("JSON Error")
+                lcd.move_to(1, 0)
+                lcd.putstr("                ")
+                lcd.move_to(1, 0)
+                lcd.putstr(response_text[:16])
+            except Exception as e:
+                lcd.move_to(0, 0)
+                lcd.putstr("                ")
+                lcd.move_to(0, 0)
+                lcd.putstr("Error:")
+                lcd.move_to(1, 0)
+                lcd.putstr("                ")
+                lcd.move_to(1, 0)
+                lcd.putstr(str(e)[:16])
 
         except Exception as e:
             lcd.move_to(0, 0)
