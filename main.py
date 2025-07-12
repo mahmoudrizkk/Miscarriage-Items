@@ -353,80 +353,76 @@ def trigger_barcode_request():
         
         get_last_barcode(selected_type)
 
+def select_order_number():
+    """Get order number from user input"""
+    order_buffer = ""
+    last_key = None
+
+    update_wifi_status(force=True)
+    lcd.move_to(0, 0)
+    lcd.putstr("                ")
+    lcd.move_to(0, 0)
+    lcd.putstr("Enter Order No:")
+    lcd.move_to(1, 0)
+    lcd.putstr("Press # to confirm")
+
+    while True:
+        update_wifi_status()
+        key = scan_keypad()
+        if key and key != last_key:
+            if key == '#':  # Confirm order number
+                if order_buffer:
+                    lcd.move_to(0, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Order Confirmed:")
+                    lcd.move_to(1, 0)
+                    lcd.putstr("No: " + order_buffer[:12])
+                    time.sleep(1)
+                    return order_buffer
+                else:
+                    lcd.move_to(0, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Enter a number!")
+                    time.sleep(1)
+                    lcd.move_to(0, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Enter Order No:")
+                    lcd.move_to(1, 0)
+                    lcd.putstr("Press # to confirm")
+            elif key == '*':  # Backspace
+                order_buffer = order_buffer[:-1]
+                lcd.move_to(0, 0)
+                lcd.putstr("                ")
+                lcd.move_to(0, 0)
+                lcd.putstr("Order No:")
+                lcd.move_to(0, 9)
+                lcd.putstr(order_buffer)
+                lcd.move_to(1, 0)
+                lcd.putstr("Press # to confirm")
+            elif key in '0123456789':  # Number input
+                order_buffer += key
+                lcd.move_to(0, 0)
+                lcd.putstr("                ")
+                lcd.move_to(0, 0)
+                lcd.putstr("Order No:")
+                lcd.move_to(0, 9)
+                lcd.putstr(order_buffer)
+                lcd.move_to(1, 0)
+                lcd.putstr("Press # to confirm")
+            last_key = key
+        elif not key:
+            last_key = None
+        time.sleep_ms(100)
+
 def main():
     """Main application loop"""
     connect_wifi()
     
-    # Global order number - set once at the beginning
-    global_order_no = None
-
-    # Initial Order Number Selection (only once at startup)
-    def select_order_number():
-        nonlocal global_order_no
-        order_buffer = ""
-        last_key = None
-
-        update_wifi_status(force=True)
-        lcd.move_to(0, 0)
-        lcd.putstr("                ")
-        lcd.move_to(0, 0)
-        lcd.putstr("Enter Order No:")
-        lcd.move_to(1, 0)
-        lcd.putstr("Press # to confirm")
-
-        while global_order_no is None:
-            update_wifi_status()
-            key = scan_keypad()
-            if key and key != last_key:
-                if key == '#':  # Confirm order number
-                    if order_buffer:
-                        global_order_no = order_buffer
-                        lcd.move_to(0, 0)
-                        lcd.putstr("                ")
-                        lcd.move_to(0, 0)
-                        lcd.putstr("Order Confirmed:")
-                        lcd.move_to(1, 0)
-                        lcd.putstr("No: " + global_order_no[:12])
-                        time.sleep(1)
-                    else:
-                        lcd.move_to(0, 0)
-                        lcd.putstr("                ")
-                        lcd.move_to(0, 0)
-                        lcd.putstr("Enter a number!")
-                        time.sleep(1)
-                        lcd.move_to(0, 0)
-                        lcd.putstr("                ")
-                        lcd.move_to(0, 0)
-                        lcd.putstr("Enter Order No:")
-                        lcd.move_to(1, 0)
-                        lcd.putstr("Press # to confirm")
-                elif key == '*':  # Backspace
-                    order_buffer = order_buffer[:-1]
-                    lcd.move_to(0, 0)
-                    lcd.putstr("                ")
-                    lcd.move_to(0, 0)
-                    lcd.putstr("Order No:")
-                    lcd.move_to(0, 9)
-                    lcd.putstr(order_buffer)
-                    lcd.move_to(1, 0)
-                    lcd.putstr("Press # to confirm")
-                elif key in '0123456789':  # Number input
-                    order_buffer += key
-                    lcd.move_to(0, 0)
-                    lcd.putstr("                ")
-                    lcd.move_to(0, 0)
-                    lcd.putstr("Order No:")
-                    lcd.move_to(0, 9)
-                    lcd.putstr(order_buffer)
-                    lcd.move_to(1, 0)
-                    lcd.putstr("Press # to confirm")
-                last_key = key
-            elif not key:
-                last_key = None
-            time.sleep_ms(100)
-
-    # Get initial order number
-    select_order_number()
+    # Order number - set once at the beginning
+    order_no = select_order_number()
 
     while True:
         # Step 1: Type Selection
@@ -489,8 +485,7 @@ def main():
                     lcd.move_to(0, 0)
                     lcd.putstr("Changing Order...")
                     time.sleep(1)
-                    global_order_no = None
-                    select_order_number()
+                    order_no = select_order_number()
                     return  # Restart the main loop
                 elif key in '0123456789':  # Number input
                     number_buffer += key
@@ -512,8 +507,8 @@ def main():
         lcd.move_to(0, 0)
         lcd.putstr("                ")
         lcd.move_to(0, 0)
-        lcd.putstr("Selected Type:")
-        lcd.move_to(0, 14)
+        lcd.putstr("Type:")
+        lcd.move_to(0, 7)
         lcd.putstr(str(selected_type))
         time.sleep(1)
         
@@ -605,7 +600,7 @@ def main():
         # Step 6: Send to API
         # http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight=15&TypeId=1&OrderIndex=1&MachineId=1&WeightOfParneka=6
         try:
-            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight={received_weight}&TypeId={selected_type}&OrderIndex={global_order_no}&machineid=1&WeightOfParneka={deduction_weight}"
+            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight={received_weight}&TypeId={selected_type}&OrderIndex={order_no}&machineid=1&WeightOfParneka={deduction_weight}"
             
             lcd.move_to(0, 0)
             lcd.putstr("                ")
