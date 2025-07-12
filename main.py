@@ -356,11 +356,14 @@ def trigger_barcode_request():
 def main():
     """Main application loop"""
     connect_wifi()
+    
+    # Global order number - set once at the beginning
+    global_order_no = None
 
-    while True:
-        # Step 0: Order Number Selection
+    # Initial Order Number Selection (only once at startup)
+    def select_order_number():
+        nonlocal global_order_no
         order_buffer = ""
-        order_no = None
         last_key = None
 
         update_wifi_status(force=True)
@@ -371,19 +374,19 @@ def main():
         lcd.move_to(1, 0)
         lcd.putstr("Press # to confirm")
 
-        while order_no is None:
+        while global_order_no is None:
             update_wifi_status()
             key = scan_keypad()
             if key and key != last_key:
                 if key == '#':  # Confirm order number
                     if order_buffer:
-                        order_no = order_buffer
+                        global_order_no = order_buffer
                         lcd.move_to(0, 0)
                         lcd.putstr("                ")
                         lcd.move_to(0, 0)
                         lcd.putstr("Order Confirmed:")
                         lcd.move_to(1, 0)
-                        lcd.putstr("No: " + order_no[:12])
+                        lcd.putstr("No: " + global_order_no[:12])
                         time.sleep(1)
                     else:
                         lcd.move_to(0, 0)
@@ -422,6 +425,10 @@ def main():
                 last_key = None
             time.sleep_ms(100)
 
+    # Get initial order number
+    select_order_number()
+
+    while True:
         # Step 1: Type Selection
         number_buffer = ""
         selected_type = None
@@ -476,6 +483,15 @@ def main():
                     lcd.putstr("Press # to confirm")
                 elif key == '*':
                     trigger_ota_update()  # 🚀 Trigger OTA when * is pressed
+                elif key == 'B':  # Go back to order selection
+                    lcd.move_to(0, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Changing Order...")
+                    time.sleep(1)
+                    global_order_no = None
+                    select_order_number()
+                    return  # Restart the main loop
                 elif key in '0123456789':  # Number input
                     number_buffer += key
                     lcd.move_to(0, 0)
@@ -526,7 +542,7 @@ def main():
         lcd.move_to(0, 0)
         lcd.putstr("                ")
         lcd.move_to(0, 0)
-        lcd.putstr("Enter Deduct:")
+        lcd.putstr("Deduct:")
         lcd.move_to(1, 0)
         lcd.putstr("Press # to conf")
 
@@ -556,7 +572,7 @@ def main():
                         lcd.move_to(0, 0)
                         lcd.putstr("                ")
                         lcd.move_to(0, 0)
-                        lcd.putstr("Enter Deduct:")
+                        lcd.putstr("Deduct:")
                         lcd.move_to(1, 0)
                         lcd.putstr("Press # to conf")
                 elif key == '*':  # Decimal point
@@ -589,7 +605,7 @@ def main():
         # Step 6: Send to API
         # http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight=15&TypeId=1&OrderIndex=1&MachineId=1&WeightOfParneka=6
         try:
-            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight={received_weight}&TypeId={selected_type}&OrderIndex={order_buffer}&machineid=1&WeightOfParneka={deduction_weight}"
+            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight={received_weight}&TypeId={selected_type}&OrderIndex={global_order_no}&machineid=1&WeightOfParneka={deduction_weight}"
             
             lcd.move_to(0, 0)
             lcd.putstr("                ")
@@ -653,6 +669,41 @@ def main():
 
         update_wifi_status()
         time.sleep(3)
+
+        # Step 7.5: Show deduction calculation result
+        try:
+            # Convert weights to float for calculation
+            received_weight_float = float(received_weight)
+            deduction_weight_float = float(deduction_weight)
+            
+            # Calculate net weight
+            net_weight = received_weight_float - deduction_weight_float
+            
+            lcd.move_to(0, 0)
+            lcd.putstr("                ")
+            lcd.move_to(0, 0)
+            lcd.putstr("Net Weight:")
+            lcd.move_to(1, 0)
+            lcd.putstr("                ")
+            lcd.move_to(1, 0)
+            lcd.putstr(str(f"{net_weight:.1f}"))
+            
+            update_wifi_status()
+            time.sleep(3)
+            
+        except ValueError:
+            # Handle case where weights can't be converted to float
+            lcd.move_to(0, 0)
+            lcd.putstr("                ")
+            lcd.move_to(0, 0)
+            lcd.putstr("Weight Calc Error")
+            lcd.move_to(1, 0)
+            lcd.putstr("                ")
+            lcd.move_to(1, 0)
+            lcd.putstr("Invalid Format")
+            
+            update_wifi_status()
+            time.sleep(3)
 
         # Step 8: Success Message and Restart
         lcd.move_to(0, 0)
