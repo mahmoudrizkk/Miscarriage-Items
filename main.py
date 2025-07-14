@@ -510,7 +510,7 @@ def main():
         lcd.putstr("Type:")
         lcd.move_to(0, 7)
         lcd.putstr(str(selected_type))
-        time.sleep(1)
+        time.sleep_ms(500)
         
         # Step 3: Wait for Weight
         lcd.move_to(0, 0)
@@ -597,10 +597,41 @@ def main():
             time.sleep_ms(100)
         # Now deduction_weight contains the value entered by the user
 
+        # Step 6: Piece Status Selection
+        lcd.move_to(0, 0)
+        lcd.putstr("                ")
+        lcd.move_to(0, 0)
+        lcd.putstr("0:D 1:G 2:E")
+        lcd.move_to(1, 0)
+        lcd.putstr("Select status:")
+
+        piece_status = None
+        last_key = None
+        while piece_status is None:
+            update_wifi_status()
+            key = scan_keypad()
+            if key and key != last_key:
+                if key in ['0', '1', '2']:
+                    piece_status = int(key)
+                    lcd.move_to(0, 0)
+                    lcd.putstr("                ")
+                    lcd.move_to(0, 0)
+                    if piece_status == 0:
+                        lcd.putstr("E3dam sel.")
+                    elif piece_status == 1:
+                        lcd.putstr("Good sel.")
+                    elif piece_status == 2:
+                        lcd.putstr("Esteb3ad sel.")
+                    time.sleep(1)
+                last_key = key
+            elif not key:
+                last_key = None
+            time.sleep_ms(100)
+
         # Step 6: Send to API
         # http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight=15&TypeId=1&OrderIndex=1&MachineId=1&WeightOfParneka=6
         try:
-            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight={received_weight}&TypeId={selected_type}&OrderIndex={order_no}&machineid=1&WeightOfParneka={deduction_weight}"
+            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight={received_weight}&TypeId={selected_type}&OrderIndex={order_no}&machineid=1&WeightOfParneka={deduction_weight}&PieceStatus={piece_status}"
             
             lcd.move_to(0, 0)
             lcd.putstr("                ")
