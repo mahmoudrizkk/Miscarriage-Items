@@ -601,7 +601,7 @@ def main():
         lcd.move_to(0, 0)
         lcd.putstr("                ")
         lcd.move_to(0, 0)
-        lcd.putstr("0:D 1:G 2:E")
+        lcd.putstr("1:E 2:S 3:G")
         lcd.move_to(1, 0)
         lcd.putstr("Select status:")
 
@@ -611,17 +611,17 @@ def main():
             update_wifi_status()
             key = scan_keypad()
             if key and key != last_key:
-                if key in ['0', '1', '2']:
+                if key in ['1', '2', '3']:
                     piece_status = int(key)
                     lcd.move_to(0, 0)
                     lcd.putstr("                ")
                     lcd.move_to(0, 0)
-                    if piece_status == 0:
+                    if piece_status == 1:
                         lcd.putstr("E3dam sel.")
-                    elif piece_status == 1:
-                        lcd.putstr("Good sel.")
                     elif piece_status == 2:
                         lcd.putstr("Esteb3ad sel.")
+                    elif piece_status == 3:
+                        lcd.putstr("Good sel.")
                     time.sleep(1)
                 last_key = key
             elif not key:
@@ -631,7 +631,7 @@ def main():
         # Step 6: Send to API
         # http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight=15&TypeId=1&OrderIndex=1&MachineId=1&WeightOfParneka=6
         try:
-            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight={received_weight}&TypeId={selected_type}&OrderIndex={order_no}&machineid=1&WeightOfParneka={deduction_weight}&PieceStatus={piece_status}"
+            url = f"http://shatat-ue.runasp.net/api/Devices/MiscarriageItem?Weight={received_weight}&TypeId={selected_type}&OrderIndex={order_no}&machineid=1&WeightOfParneka={deduction_weight}&Status={piece_status}"
             
             lcd.move_to(0, 0)
             lcd.putstr("                ")
